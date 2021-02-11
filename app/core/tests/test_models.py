@@ -1,8 +1,16 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
+from core import models
+
+
+def sample_user(email='test@example.com', password='testpass'):
+    """サンプルユーザーの作成"""
+    return get_user_model().objects.create_user(email, password)
+
 
 class ModelTest(TestCase):
+
     def test_create_user_with_email_successful(self):
         """新しいemailとUserを作るテスト"""
         email = 'test@example.com'
@@ -36,3 +44,22 @@ class ModelTest(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_tag_str(self):
+        """タグ文字列の列表現のテスト"""
+        tag = models.Tag.objects.create(
+            user=sample_user(),
+            name='book'
+        )
+
+        self.assertEqual(str(tag), tag.name)
+
+    def test_book_str(self):
+        """本の文字列表現のテスト"""
+        book = models.Book.objects.create(
+            user=sample_user(),
+            title='test book title',
+            price=5.00,
+        )
+
+        self.assertEqual(str(book), book.title)
