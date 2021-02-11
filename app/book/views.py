@@ -43,3 +43,7 @@ class BookViewSet(viewsets.ModelViewSet):
             return serializers.BookDetailSerializer
 
         return self.serializer_class
+
+    def perform_create(self, serializer):
+        """新しい本を作成する"""
+        serializer.save(user=self.request.user)

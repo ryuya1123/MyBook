@@ -97,3 +97,68 @@ class PrivateBOOKApiTests(TestCase):
 
         serializer = BookDetailSerializer(book)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_basic_book(self):
+        """本を作成するテスト"""
+        payload = {
+            'title': 'Test book',
+            'price': 10.00,
+        }
+        res = self.client.post(BOOKS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        book = Book.objects.get(id=res.data['id'])
+        for key in payload.keys():
+            self.assertEqual(payload[key], getattr(book, key))
+
+    def test_create_book_with_tags(self):
+        """本とタグを作成する"""
+        tag1 = sample_tag(user=self.user, name='Tag 1')
+        tag2 = sample_tag(user=self.user, name='Tag 2')
+        payload = {
+            'title': 'Test book with two tags',
+            'tags': [tag1.id, tag2.id],
+            'price': 10.00
+        }
+        res = self.client.post(BOOKS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        book = Book.objects.get(id=res.data['id'])
+        tags = book.tags.all()
+        self.assertEqual(tags.count(), 2)
+        self.assertIn(tag1, tags)
+        self.assertIn(tag2, tags)
+
+    def test_partial_update_recipe(self):
+        """パッチで本を更新するテスト"""
+        book = sample_book(user=self.user)
+        book.tags.add(sample_tag(user=self.user))
+        new_tag = sample_tag(user=self.user, name='science')
+
+        payload = {'title': 'math book', 'tags': [new_tag.id]}
+        url = detail_url(book.id)
+        self.client.patch(url, payload)
+
+        book.refresh_from_db()
+        self.assertEqual(book.title, payload['title'])
+        tags = book.tags.all()
+        self.assertEqual(len(tags), 1)
+        self.assertIn(new_tag, tags)
+
+    def test_full_update_book(self):
+        """PUTで本を全て更新するテスト"""
+        book = sample_book(user=self.user)
+        book.tags.add(sample_tag(user=self.user))
+
+        payload = {
+                'title': 'Spaghetti carbonara',
+                'price': 5.00
+            }
+        url = detail_url(book.id)
+        self.client.put(url, payload)
+
+        book.refresh_from_db()
+        self.assertEqual(book.title, payload['title'])
+        self.assertEqual(book.price, payload['price'])
+        tags = book.tags.all()
+        self.assertEqual(len(tags), 0)
