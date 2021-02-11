@@ -6,6 +6,7 @@ from book import views
 
 router = DefaultRouter()
 router.register('tags', views.TagViewSet)
+router.register('books', views.BookViewSet)
 
 app_name = 'book'
 
