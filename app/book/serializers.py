@@ -30,3 +30,12 @@ class BookSerializer(serializers.ModelSerializer):
 
 class BookDetailSerializer(BookSerializer):
     tags = TagSerializer(many=True, read_only=True)
+
+
+class BookImageSerializer(serializers.ModelSerializer):
+    """画像を本にアップロードするためのシリアライザー"""
+
+    class Meta:
+        model = Book
+        fields = ('id', 'image')
+        read_only_fields = ('id',)

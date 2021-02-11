@@ -1,3 +1,8 @@
+import tempfile
+import os
+
+from PIL import Image
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -32,6 +37,11 @@ def sample_book(user, **params):
     defaults.update(params)
 
     return Book.objects.create(user=user, **defaults)
+
+
+def image_upload_url(book_id):
+    """本の画像をアップロードするためのURLを返す"""
+    return reverse('book:book-upload-image', args=[book_id])
 
 
 class PublicBookApiTests(TestCase):
@@ -162,3 +172,36 @@ class PrivateBOOKApiTests(TestCase):
         self.assertEqual(book.price, payload['price'])
         tags = book.tags.all()
         self.assertEqual(len(tags), 0)
+
+
+class BookImageUploadTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user('user', 'testpass')
+        self.client.force_authenticate(self.user)
+        self.book = sample_book(user=self.user)
+
+    def tearDown(self):
+        self.book.image.delete()
+
+    def test_upload_image_to_book(self):
+        """Bookへの画像のアップロードのテスト"""
+        url = image_upload_url(self.book.id)
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            res = self.client.post(url, {'image': ntf}, format='multipart')
+
+        self.book.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('image', res.data)
+        self.assertTrue(os.path.exists(self.book.image.path))
+
+    def test_upload_image_bad_request(self):
+        """無効なイメージがアップロードされた時のテスト"""
+        url = image_upload_url(self.book.id)
+        res = self.client.post(url, {'image': 'notimage'}, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
