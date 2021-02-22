@@ -6,4 +6,4 @@ WORKDIR /frontend
 COPY ./frontend /frontend
 
 RUN npm install -g create-react-app
-RUN npm install axios
+RUN npm install @material-ui/core

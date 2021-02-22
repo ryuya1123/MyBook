@@ -23,10 +23,6 @@ class TagViewSet(viewsets.GenericViewSet,
         """現在認証されているユーザーのオブジェクトを返す"""
         return self.queryset.filter(user=self.request.user).order_by('-name')
 
-    def perform_create(self, serializer):
-        """Create a new ingredient"""
-        serializer.save(user=self.request.user)
-
 
 class BookViewSet(viewsets.ModelViewSet):
     """データベース内の本を管理する"""
@@ -34,23 +30,6 @@ class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-
-    def get_queryset(self):
-        """認証されたユーザーの本を取得する"""
-        return self.queryset.filter(user=self.request.user)
-
-    def get_serializer_class(self):
-        """適切なシリアライザークラスを返す"""
-        if self.action == 'retrieve':
-            return serializers.BookDetailSerializer
-        elif self.action == 'upload_image':
-            return serializers.BookImageSerializer
-
-        return self.serializer_class
-
-    def perform_create(self, serializer):
-        """新しい本を作成する"""
-        serializer.save(user=self.request.user)
 
     @action(methods=['POST'], detail=True, url_path='upload-image')
     def upload_image(self, request, pk=None):
@@ -72,3 +51,23 @@ class BookViewSet(viewsets.ModelViewSet):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    def get_queryset(self):
+        """認証されたユーザーの本を取得する"""
+        tags = self.request.query_params.get('tags')
+        queryset = self.queryset
+
+        return queryset.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        """適切なシリアライザークラスを返す"""
+        if self.action == 'retrieve':
+            return serializers.BookDetailSerializer
+        elif self.action == 'upload_image':
+            return serializers.BookImageSerializer
+
+        return self.serializer_class
+
+    def perform_create(self, serializer):
+        """新しい本を作成する"""
+        serializer.save(user=self.request.user)

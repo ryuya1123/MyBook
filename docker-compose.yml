@@ -5,6 +5,7 @@ services:
     container_name: mybook_backend
     build:
       context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -34,7 +35,7 @@ services:
     container_name: mybook_frontend
     build:
       context: .
-      dockerfile: "./Dockerfile-nodejs"
+      dockerfile: Dockerfile_node
     volumes:
       - ./frontend:/frontend
     command: >
